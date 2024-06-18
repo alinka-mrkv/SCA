@@ -1,0 +1,7 @@
+ppdeep
+python-tlsh
+pandas
+pefile
+psycopg2-binary
+python-dotenv
+argparse

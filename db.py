@@ -12,39 +12,58 @@ db_db = os.getenv('DB_DATABASE')
 
 
 def init():
-    #execute_postgres_command("CREATE DATABASE " + db_db + ";")
-    execute_postgres_command("GRANT ALL PRIVILEGES ON DATABASE "+ db_db +" TO " + db_username + ";")
-    #execute_postgres_command("\connect " + db_db + ";")
-
+    execute_postgres_command("CREATE EXTENSION IF NOT EXISTS pg_similarity;")
     execute_postgres_command("CREATE TABLE Modules (\
                            ModuleID SERIAL PRIMARY KEY, \
-                           ModuleName VARCHAR(50) NOT NULL, \
-                           ModuleVersion VARCHAR(50) NOT NULL,\
+                           ModuleName VARCHAR(256) NOT NULL, \
+                           ModuleVersion VARCHAR(256) NOT NULL,\
                            ModuleSize BIGINT,\
                            ModuleType VARCHAR(10) NOT NULL,\
-                           ModuleDescription VARCHAR(255) NOT NULL,\
-                           ModuleHash_md5 CHAR(128),\
-                           ModuleHash_sha256 CHAR(256),\
-                           ModuleFuzzyHash CHAR(256),\
+                           ModuleDescription VARCHAR(256) NOT NULL,\
+                           ModuleHash_md5 VARCHAR(256) NOT NULL,\
+                           ModuleHash_sha256 VARCHAR(256) NOT NULL,\
+                           ModuleHash_imphash VARCHAR(256) NOT NULL,\
+                           ModuleHash_ssdeep VARCHAR(256) NOT NULL,\
+                           ModuleHash_tlsh VARCHAR(256) NOT NULL, \
                            ModuleSymbols BOOLEAN,\
                            ExportFuncsCount INT,\
                            ImportFuncsCount INT,\
-                           StringsCount INT\
+                           StringsCount INT,\
+                           CONSTRAINT UQ_ModuleHash_md5 UNIQUE (ModuleHash_md5),\
+                           CONSTRAINT UQ_ModuleHash_sha256 UNIQUE (ModuleHash_sha256)\
                            );")
     execute_postgres_command("CREATE TABLE Functions ( \
                            FunctionID SERIAL PRIMARY KEY, \
-                           FuncName VARCHAR(50) NOT NULL,\
+                           FuncName VARCHAR(256) NOT NULL,\
                            ModuleID INT,\
                            FuncOffset BIGINT,\
                            FunctionSize BIGINT,\
-                           FunctionHash_md5 CHAR(128),\
-                           FunctionHash_sha256 CHAR(256),\
-                           FunctionFuzzyHash CHAR(256)\
+                           FunctionHash_md5 VARCHAR(256) NOT NULL,\
+                           FunctionHash_sha256 VARCHAR(256) NOT NULL,\
+                           FunctionHash_ssdeep VARCHAR(256) NOT NULL, \
+                           FunctionHash_tlsh VARCHAR(256) NOT NULL,\
+                           FunctionRefs INT, \
+                           FunctionArgsCount INT, \
+                           FunctionJmpCount INT, \
+                           FunctionCallCount INT, \
+                           CONSTRAINT UQ_FunctionHash_md5 UNIQUE (FunctionHash_md5),\
+                           CONSTRAINT UQ_FunctionHash_sha256 UNIQUE (FunctionHash_sha256)\
                            );")
     execute_postgres_command("CREATE TABLE Strings (\
                            StringID SERIAL PRIMARY KEY, \
-                           Str VARCHAR(256) NOT NULL\
+                           Str BYTEA NOT NULL,\
+                           CONSTRAINT UQ_Str UNIQUE (Str) \
                            );")
+    
+    execute_postgres_command("CREATE INDEX IF NOT EXISTS idx_modules_module_id ON Modules(ModuleID);")
+    execute_postgres_command("CREATE INDEX IF NOT EXISTS idx_functions_ssdeep ON Functions(FunctionHash_ssdeep);")
+    execute_postgres_command("CREATE INDEX IF NOT EXISTS idx_functions_tlsh ON Functions(FunctionHash_tlsh);")
+    execute_postgres_command("CREATE INDEX IF NOT EXISTS idx_functions_refs ON Functions(FunctionRefs);")
+    execute_postgres_command("CREATE INDEX IF NOT EXISTS idx_functions_args ON Functions(FunctionArgsCount);")
+    execute_postgres_command("CREATE INDEX IF NOT EXISTS idx_functions_call ON Functions(FunctionCallCount);")
+    execute_postgres_command("CREATE INDEX IF NOT EXISTS idx_functions_jmp ON Functions(FunctionJmpCount);")
+    execute_postgres_command("CREATE INDEX IF NOT EXISTS idx_strings_str ON Strings(Str);")
+
     return
 
 
@@ -63,7 +82,7 @@ def execute_postgres_command(command):
         data = cursor.fetchall()
         return data
     except (Exception, psycopg2.Error) as error:
-        print("Error while using PostgreSQL: %s", error)
+        print("%s", error)
     finally:
         if connection is not None:
             cursor.close()
