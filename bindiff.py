@@ -8,6 +8,8 @@ import ppdeep
 import pefile
 from pathlib import Path
 from help_module import *
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
+
 
 
 def get_module_info(file_path):
@@ -101,6 +103,7 @@ def main():
     df_module = get_module_info(file_path)
     df_funcs = get_funcs(file_path)
     df_strings = get_strings(file_path)
+    df_strings = df_strings.applymap(lambda x: ILLEGAL_CHARACTERS_RE.sub('', str(x)) if isinstance(x, str) else x)
     with pd.ExcelWriter(Path(file_path).name + '.xlsx') as writer:
         df_module.to_excel(writer, sheet_name='ModuleInfo', index=False)
         df_funcs.to_excel(writer, sheet_name='FuncsInfo', index=False)

@@ -5,6 +5,7 @@ import os
 import base64
 import ppdeep
 import argparse
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
 
 def add_data_to_db(idahunt_path):
@@ -129,6 +130,7 @@ def analyze_similarity(idahunt_path):
     df_modules = pd.DataFrame(result_m)
     df_funcs = pd.DataFrame(result_f)
     df_strings = pd.DataFrame(result_s)
+    df_strings = df_strings.applymap(lambda x: ILLEGAL_CHARACTERS_RE.sub('', str(x)) if isinstance(x, str) else x)
     with pd.ExcelWriter('./test_bindiff/result.xlsx') as writer:
         df_modules.to_excel(writer, sheet_name='ModuleInfo', index=False)
         df_funcs.to_excel(writer, sheet_name='FuncsInfo', index=False)

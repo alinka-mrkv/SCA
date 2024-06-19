@@ -61,12 +61,12 @@ for segment in idautils.Segments():
                     if(element[12] == func_call_count): confidence += 0.1
                     if(element[9] == func_code_refs): confidence += 0.1
                     if(element[10] == func_args_count): confidence += 0.1
-                new_row.add(tuple([function_name, element[2],
-                                  func_offset, function_size,
-                                  func_hash_md5, func_hash_sha256,
-                                  func_hash_ssdeep, func_hash_tlsh,
-                                  func_code_refs, func_args_count,
-                                  func_jmp_count, func_call_count,
+                new_row.add(tuple([element[1], element[2],
+                                  element[3], element[4],
+                                  element[5], element[6],
+                                  element[7], element[8],
+                                  element[9], element[10],
+                                  element[11], element[12],
                                   confidence]))
 
 unique_rows = [pd.Series(row, index=columns) for row in new_row]
