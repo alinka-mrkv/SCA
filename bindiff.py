@@ -103,7 +103,8 @@ def main():
     df_module = get_module_info(file_path)
     df_funcs = get_funcs(file_path)
     df_strings = get_strings(file_path)
-    df_strings = df_strings.applymap(lambda x: ILLEGAL_CHARACTERS_RE.sub('', str(x)) if isinstance(x, str) else x)
+    df_strings = df_strings[~df_strings.applymap(lambda x: ILLEGAL_CHARACTERS_RE.search(str(x))).any(axis=1)]
+    #df_strings = df_strings.applymap(lambda x: ILLEGAL_CHARACTERS_RE.sub(' ', str(x)) if isinstance(x, str) else x)
     with pd.ExcelWriter(Path(file_path).name + '.xlsx') as writer:
         df_module.to_excel(writer, sheet_name='ModuleInfo', index=False)
         df_funcs.to_excel(writer, sheet_name='FuncsInfo', index=False)

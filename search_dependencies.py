@@ -39,9 +39,10 @@ for segment in idautils.Segments():
         func_jmp_count, func_call_count = get_jpm_call_count(func, func_end)
         confidence = 0
         flag = 1
-        data = db.execute_postgres_command("SELECT * FROM Functions WHERE jarowinkler(CAST(FunctionHash_ssdeep AS TEXT), '" + func_hash_ssdeep + "') >= 0.8 \
-                                            AND (jarowinkler(CAST(FunctionHash_tlsh AS TEXT), '" + func_hash_tlsh + "') >= 0.8\
+        data = db.execute_postgres_command("SELECT * FROM Functions WHERE jarowinkler(CAST(FunctionHash_ssdeep AS TEXT), '" + func_hash_ssdeep + "') >= 0.9 \
+                                            OR (jarowinkler(CAST(FunctionHash_tlsh AS TEXT), '" + func_hash_tlsh + "') >= 0.9\
                                             AND FunctionHash_tlsh != 'TNULL');")
+
         if(len(data) == 0):
             flag = 0
             data = db.execute_postgres_command("SELECT * FROM Functions WHERE FunctionRefs = " + str(func_code_refs) +
@@ -61,13 +62,22 @@ for segment in idautils.Segments():
                     if(element[12] == func_call_count): confidence += 0.1
                     if(element[9] == func_code_refs): confidence += 0.1
                     if(element[10] == func_args_count): confidence += 0.1
-                new_row.add(tuple([element[1], element[2],
-                                  element[3], element[4],
-                                  element[5], element[6],
-                                  element[7], element[8],
-                                  element[9], element[10],
-                                  element[11], element[12],
-                                  confidence]))
+                key_tuple = tuple([element[1], element[2], element[3], element[4],
+                                    element[5], element[6], element[7], element[8],
+                                    element[9], element[10], element[11], element[12]])
+                existing_entry = next((entry for entry in new_row if entry[:12] == key_tuple), None)
+                if existing_entry is None:
+                    new_row.add(tuple([element[1], element[2], element[3], element[4],
+                                    element[5], element[6], element[7], element[8],
+                                    element[9], element[10], element[11], element[12],
+                                    confidence]))
+                else:
+                    if (existing_entry[-1] < confidence): 
+                        new_row.remove(existing_entry)
+                        new_row.add(tuple([element[1], element[2], element[3], element[4],
+                                    element[5], element[6], element[7], element[8],
+                                    element[9], element[10], element[11], element[12],
+                                    confidence]))
 
 unique_rows = [pd.Series(row, index=columns) for row in new_row]
 unique_rows.sort(key=lambda x: x['Confidence'], reverse=True)

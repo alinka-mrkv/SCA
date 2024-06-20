@@ -24,8 +24,8 @@ def analyze_funcs(result):
     new_row = []
     for row in result:
         flag = 1
-        data = db.execute_postgres_command("SELECT * FROM Functions WHERE jarowinkler(CAST(FunctionHash_ssdeep AS TEXT), '" + row['FunctionHash_ssdeep'] + "') >= 0.8 \
-                                            AND (jarowinkler(CAST(FunctionHash_tlsh AS TEXT), '" + row['FunctionHash_tlsh'] + "') >= 0.8\
+        data = db.execute_postgres_command("SELECT * FROM Functions WHERE jarowinkler(CAST(FunctionHash_ssdeep AS TEXT), '" + row['FunctionHash_ssdeep'] + "') >= 0.9 \
+                                            OR (jarowinkler(CAST(FunctionHash_tlsh AS TEXT), '" + row['FunctionHash_tlsh'] + "') >= 0.9\
                                             AND FunctionHash_tlsh != 'TNULL');")
         confidence = 0
         if(len(data) == 0):
@@ -47,13 +47,22 @@ def analyze_funcs(result):
                     if(element[12] == row['FunctionCallCount']): confidence += 0.1
                     if(element[9] == row['FunctionRefs']): confidence += 0.1
                     if(element[10] == row['FunctionArgsCount']): confidence += 0.1
-                new_row.append(tuple([element[1], element[2],
-                                  element[3], element[4],
-                                  element[5], element[6],
-                                  element[7], element[8],
-                                  element[9], element[10],
-                                  element[11], element[12],
-                                  confidence]))
+                key_tuple = tuple([element[1], element[2], element[3], element[4],
+                                    element[5], element[6], element[7], element[8],
+                                    element[9], element[10], element[11], element[12]])
+                existing_entry = next((entry for entry in new_row if entry[:12] == key_tuple), None)
+                if existing_entry is None:
+                    new_row.append(tuple([element[1], element[2], element[3], element[4],
+                                    element[5], element[6], element[7], element[8],
+                                    element[9], element[10], element[11], element[12],
+                                    confidence]))
+                else:
+                    if (existing_entry[-1] < confidence): 
+                        new_row.remove(existing_entry)
+                        new_row.append(tuple([element[1], element[2], element[3], element[4],
+                                    element[5], element[6], element[7], element[8],
+                                    element[9], element[10], element[11], element[12],
+                                    confidence]))
 
     result.sort(key=lambda x: x['Confidence'], reverse=True)
     new_row = set(new_row)
@@ -81,7 +90,7 @@ def analyze_strings(result):
 
 def analyze_similarity(idahunt_path):
     p = subprocess.run(['python', f'{idahunt_path}/idahunt.py' ,'--inputdir', './test_bindiff', '--analyse', '--scripts',  'bindiff.py'], 
-                       text=True, capture_output=True, check=True)
+                      text=True, capture_output=True, check=True)
 
     files = os.listdir('./test_bindiff')
     result_m = []
@@ -130,7 +139,8 @@ def analyze_similarity(idahunt_path):
     df_modules = pd.DataFrame(result_m)
     df_funcs = pd.DataFrame(result_f)
     df_strings = pd.DataFrame(result_s)
-    df_strings = df_strings.applymap(lambda x: ILLEGAL_CHARACTERS_RE.sub('', str(x)) if isinstance(x, str) else x)
+    df_strings = df_strings[~df_strings.applymap(lambda x: ILLEGAL_CHARACTERS_RE.search(str(x))).any(axis=1)]
+    #df_strings = df_strings.applymap(lambda x: ILLEGAL_CHARACTERS_RE.sub(' ', str(x)) if isinstance(x, str) else x)
     with pd.ExcelWriter('./test_bindiff/result.xlsx') as writer:
         df_modules.to_excel(writer, sheet_name='ModuleInfo', index=False)
         df_funcs.to_excel(writer, sheet_name='FuncsInfo', index=False)
