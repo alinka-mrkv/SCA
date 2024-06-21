@@ -13,10 +13,15 @@ logger = logging.getLogger('logger')
 load_dotenv()
 
 db_host = os.getenv('DB_HOST')
+if not db_host: logger.info("Need to specify DB_HOST in .env")
 db_port = os.getenv('DB_PORT')
+if not db_port: logger.info("Need to specify DB_PORT in .env")
 db_username = os.getenv('DB_USER')
+if not db_username: logger.info("Need to specify DB_USER in .env")
 db_password = os.getenv('DB_PASSWORD')
+if not db_password: logger.info("Need to specify DB_PASSWORD in .env")
 db_db = os.getenv('DB_DATABASE')
+if not db_db: logger.info("Need to specify DB_DATABASE in .env")
 
 
 def init():
