@@ -12,6 +12,8 @@ from help_module import *
 
 
 def get_module_info(file_path):
+    with open('../log.txt', 'a', encoding='utf-8') as file:
+        file.write("INFO - Start parsing module\n")
     pe = pefile.PE(file_path)
     module_name = Path(file_path).name
     module_version = pe.FILE_HEADER.Machine#pe.OPTIONAL_HEADER.MajorImageVersion
@@ -64,6 +66,8 @@ def get_module_info(file_path):
 
 
 def get_functions(file_path):
+    with open('../log.txt', 'a', encoding='utf-8') as file:
+        file.write("INFO - Start parsing functions\n")
     strings_insert = []
     for segment in idautils.Segments():
         for func in idautils.Functions(idc.get_segm_start(segment), idc.get_segm_end(segment)):
@@ -71,7 +75,7 @@ def get_functions(file_path):
             function_size = func_end - func
             if(function_size < 10): continue
             function_name = idc.get_func_name(func)
-            if(function_name.__contains__("sub_")): function_name = ""
+            if(function_name.__contains__("sub_") or len(function_name) > 255): function_name = ""
             func_offset = func - ida_nalt.get_imagebase()
             data = ""
             data = idc.get_bytes(func, int(func_end) - int(func))
@@ -97,6 +101,7 @@ def get_functions(file_path):
                     str(func_jmp_count) + ", " +
                     str(func_call_count) + ")")
     db_values = ', '.join([value for value in strings_insert])
+    print(db_values)
     db.execute_postgres_command(f"INSERT INTO Functions ( \
                     FuncName,\
                     ModuleID,\
@@ -115,6 +120,8 @@ def get_functions(file_path):
 
 
 def get_strings(file_path):
+    with open('../log.txt', 'a', encoding='utf-8') as file:
+        file.write("INFO - Start parsing strings\n")
     strings = idautils.Strings(default_setup=False)
     strings = set(strings)
     encoded_strings = []
@@ -132,6 +139,8 @@ def main():
     get_module_info(file_path)
     get_functions(file_path)
     get_strings(file_path)
+    with open('../log.txt', 'a', encoding='utf-8') as file:
+        file.write("INFO - The end of module parsing, you can find your information in DB\n")
 
 if __name__ == "__main__":
     main()

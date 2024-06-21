@@ -9,6 +9,7 @@ import ppdeep
 import tlsh
 from help_module import *
 
+
 file_path = ida_nalt.get_input_file_path() 
 
 columns = ['FuncName', 'ModuleID', 
@@ -19,6 +20,8 @@ columns = ['FuncName', 'ModuleID',
            'FunctionJmpCount', 'FunctionCallCount', 'Confidence'] 
 new_row = set()
 
+with open('../log.txt', 'a', encoding='utf-8') as file:
+    file.write("INFO - Start parsing functions\n")
 
 for segment in idautils.Segments():
     for func in idautils.Functions(idc.get_segm_start(segment), idc.get_segm_end(segment)):
@@ -84,3 +87,6 @@ unique_rows.sort(key=lambda x: x['Confidence'], reverse=True)
 df = pd.DataFrame(unique_rows, columns=columns)
 with pd.ExcelWriter(Path(file_path).name + '.xlsx') as writer:
     df.to_excel(writer, sheet_name='DependenciesInfo', index=False)
+with open('../log.txt', 'a', encoding='utf-8') as file:
+    if(not len(df)): file.write("INFO - There is no data to put in xlsx\n")
+    else: file.write("INFO - Your data is in " + Path(file_path).name + ".xlsx in test_dependencies directory")

@@ -1,7 +1,7 @@
-ppdeep
-python-tlsh
-pandas
-pefile
-psycopg2-binary
-python-dotenv
-argparse
+ppdeep==20200505
+py-tlsh==4.7.2
+pandas==1.3.5
+pefile==2023.2.7
+psycopg2-binary==2.9.9
+python-dotenv==0.21.1
+argparse==1.4.0

@@ -5,21 +5,39 @@ import os
 import base64
 import ppdeep
 import argparse
+import logging
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
+
+logging.basicConfig(
+    handlers=[logging.FileHandler(filename='log.txt', encoding='utf-8')], format='%(levelname)s - %(message)s', level=logging.INFO
+)
+
+logger = logging.getLogger("logger")
 
 
 def add_data_to_db(idahunt_path):
+    files = os.listdir('./test_parse')
+    if not len(files):
+        logger.info("To start parsing, you need to put files in test_parse directory")
+        return
+    logger.info("Start parsing")
     p = subprocess.run(['python', f'{idahunt_path}/idahunt.py', '--inputdir', './test_parse', '--analyse', '--scripts', 'parse.py'],
                       text=True, capture_output=True, check=True)
 
 
 def search_dependencies(idahunt_path):
+    files = os.listdir('./test_dependencies')
+    if not len(files):
+        logger.info("To start analysis, you need to put files in test_dependencies directory")
+        return
+    logger.info("Start dependencies search")
     p = subprocess.run(['python', f'{idahunt_path}/idahunt.py' ,'--inputdir', './test_dependencies', '--analyse', '--scripts',  'search_dependencies.py'],
                         text=True, capture_output=True, check=True)
     return
 
 
 def analyze_funcs(result):
+    logger.info("Start search of known functions")
     for_del = []
     new_row = []
     for row in result:
@@ -78,6 +96,7 @@ def analyze_funcs(result):
 
 
 def analyze_strings(result):
+    logger.info("Start search of known strings")
     for_del = []
     for row in result:
         string = str(row['Str']).encode('utf-8')
@@ -89,8 +108,13 @@ def analyze_strings(result):
 
 
 def analyze_similarity(idahunt_path):
+    files = os.listdir('./test_bindiff')
+    if not len(files):
+        logger.info("To start analysis, you need to put files in test_bindiff directory")
+        return
+    logger.info("Start parsing")
     p = subprocess.run(['python', f'{idahunt_path}/idahunt.py' ,'--inputdir', './test_bindiff', '--analyse', '--scripts',  'bindiff.py'], 
-                      text=True, capture_output=True, check=True)
+                     text=True, capture_output=True, check=True)
 
     files = os.listdir('./test_bindiff')
     result_m = []
@@ -140,11 +164,12 @@ def analyze_similarity(idahunt_path):
     df_funcs = pd.DataFrame(result_f)
     df_strings = pd.DataFrame(result_s)
     df_strings = df_strings[~df_strings.applymap(lambda x: ILLEGAL_CHARACTERS_RE.search(str(x))).any(axis=1)]
-    #df_strings = df_strings.applymap(lambda x: ILLEGAL_CHARACTERS_RE.sub(' ', str(x)) if isinstance(x, str) else x)
     with pd.ExcelWriter('./test_bindiff/result.xlsx') as writer:
         df_modules.to_excel(writer, sheet_name='ModuleInfo', index=False)
         df_funcs.to_excel(writer, sheet_name='FuncsInfo', index=False)
         df_strings.to_excel(writer, sheet_name='StringsInfo', index=False)
+    if(not (len(df_modules) and len(df_funcs) and len(df_strings))): logger.info("There is no data to put in xlsx")
+    else: logger.info("Your data is in result.xlsx in test_bindiff directory")
     return
 
 

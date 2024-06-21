@@ -11,8 +11,10 @@ from help_module import *
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
 
-
 def get_module_info(file_path):
+    with open('../log.txt', 'a', encoding='utf-8') as file:
+        file.write("INFO - Start parsing module\n")
+
     columns = ['ModuleName', 'ModuleVersion',
                'ModuleSize', 'ModuleType', 
                'ModuleDescription', 'ModuleHash_md5', 
@@ -54,6 +56,9 @@ def get_module_info(file_path):
 
 
 def get_funcs(file_path):
+    with open('../log.txt', 'a', encoding='utf-8') as file:
+        file.write("INFO - Start parsing functions\n")
+
     columns = ['FuncName', 'ModuleID', 
            'FuncOffset', 'FunctionSize', 
            'FunctionHash_md5', 'FunctionHash_sha256', 
@@ -87,6 +92,8 @@ def get_funcs(file_path):
 
 
 def get_strings(file_path):
+    with open('../log.txt', 'a', encoding='utf-8') as file:
+        file.write("INFO - Starting parsing strings\n")
     columns = ['Str']
     new_row = []
     strings = []
@@ -109,6 +116,9 @@ def main():
         df_module.to_excel(writer, sheet_name='ModuleInfo', index=False)
         df_funcs.to_excel(writer, sheet_name='FuncsInfo', index=False)
         df_strings.to_excel(writer, sheet_name='StringsInfo', index=False)
+    with open('../log.txt', 'a', encoding='utf-8') as file:
+        if(not (len(df_module) and len(df_funcs) and len(df_strings))): file.write("INFO - There is no data to put in xlsx")
+        else: file.write("INFO - Your data is in " + Path(file_path).name + ".xlsx in test_bindiff directory")
 
     
 

@@ -1,6 +1,14 @@
 import psycopg2
 import os
 from dotenv import load_dotenv
+import logging
+
+
+logging.basicConfig(
+    handlers=[logging.FileHandler(filename='log.txt', encoding='utf-8')], format='%(levelname)s - %(message)s', level=logging.INFO
+)
+
+logger = logging.getLogger('logger')
 
 load_dotenv()
 
@@ -12,6 +20,7 @@ db_db = os.getenv('DB_DATABASE')
 
 
 def init():
+    logger.info("Database initialization")
     execute_postgres_command("CREATE EXTENSION IF NOT EXISTS pg_similarity;")
     execute_postgres_command("CREATE TABLE Modules (\
                            ModuleID SERIAL PRIMARY KEY, \
@@ -63,7 +72,7 @@ def init():
     execute_postgres_command("CREATE INDEX IF NOT EXISTS idx_functions_call ON Functions(FunctionCallCount);")
     execute_postgres_command("CREATE INDEX IF NOT EXISTS idx_functions_jmp ON Functions(FunctionJmpCount);")
     execute_postgres_command("CREATE INDEX IF NOT EXISTS idx_strings_str ON Strings(Str);")
-
+    logger.info("The end of DB initialization")
     return
 
 
@@ -82,7 +91,7 @@ def execute_postgres_command(command):
         data = cursor.fetchall()
         return data
     except (Exception, psycopg2.Error) as error:
-        print("%s", error)
+        if error is not "no results to fetch": logger.info(error)
     finally:
         if connection is not None:
             cursor.close()
