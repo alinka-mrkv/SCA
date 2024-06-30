@@ -7,7 +7,9 @@ All you need to run this project is:
 - IDA Pro 
 - idahunt (you can get it here: https://github.com/nccgroup/idahunt)
 - PostgreSQL
-There is a requirements.txt where you can find Python modules you need to install
+
+There is a requirements.txt where you can find Python modules you need to install.
+
 Also, you need to install pg_similarity extension for Postgresql (for example, using `sudo apt install postgresql-X-similarity`, where X - your Postgresql version)
 
 ## Preparing
