@@ -73,23 +73,40 @@ def analyze_funcs(result):
                     new_row.append(tuple([element[1], element[2], element[3], element[4],
                                     element[5], element[6], element[7], element[8],
                                     element[9], element[10], element[11], element[12],
-                                    confidence]))
+                                    confidence, row['FuncName'], row['FunctionSize'], row['FunctionHash_md5'],
+                                    row['FunctionHash_sha256'], row['FunctionHash_ssdeep'], row['FunctionHash_tlsh'],
+                                    row['FunctionRefs'], row['FunctionArgsCount'], row['FunctionJmpCount'], 
+                                    row['FunctionCallCount']]))
                 else:
                     if (existing_entry[-1] < confidence): 
                         new_row.remove(existing_entry)
                         new_row.append(tuple([element[1], element[2], element[3], element[4],
                                     element[5], element[6], element[7], element[8],
                                     element[9], element[10], element[11], element[12],
-                                    confidence]))
+                                    confidence, row['FuncName'], row['FunctionSize'], row['FunctionHash_md5'],
+                                    row['FunctionHash_sha256'], row['FunctionHash_ssdeep'], row['FunctionHash_tlsh'],
+                                    row['FunctionRefs'], row['FunctionArgsCount'], row['FunctionJmpCount'], 
+                                    row['FunctionCallCount']]))
 
     result.sort(key=lambda x: x['Confidence'], reverse=True)
     new_row = set(new_row)
-    columns = ['FuncName', 'ModuleID', 
-           'FuncOffset', 'FunctionSize', 
+    # columns = ['FuncName', 'ModuleID', 
+    #        'FuncOffset', 'FunctionSize', 
+    #        'FunctionHash_md5', 'FunctionHash_sha256', 
+    #        'FunctionHash_ssdeep', 'FunctionHash_tlsh',
+    #        'FunctionRefs', 'FunctionArgsCount',
+    #        'FunctionJmpCount', 'FunctionCallCount', 'Confidence'] 
+    columns = ['DBFuncName', 'DBModuleID', 
+           'DBFuncOffset', 'DBFunctionSize', 
+           'DBFunctionHash_md5', 'DBFunctionHash_sha256', 
+           'DBFunctionHash_ssdeep', 'DBFunctionHash_tlsh',
+           'DBFunctionRefs', 'DBFunctionArgsCount',
+           'DBFunctionJmpCount', 'DBFunctionCallCount', 'Confidence', 
+           'FuncName', 'FunctionSize', 
            'FunctionHash_md5', 'FunctionHash_sha256', 
            'FunctionHash_ssdeep', 'FunctionHash_tlsh',
            'FunctionRefs', 'FunctionArgsCount',
-           'FunctionJmpCount', 'FunctionCallCount', 'Confidence'] 
+           'FunctionJmpCount', 'FunctionCallCount']
     unique_rows = [pd.Series(row, index=columns) for row in new_row]
     unique_rows.sort(key=lambda x: x['Confidence'], reverse=True)
     return unique_rows

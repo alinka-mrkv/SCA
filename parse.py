@@ -8,33 +8,53 @@ import ppdeep
 import tlsh
 import pefile
 import base64
+import os
+import lief
 from help_module import *
 
 
 def get_module_info(file_path):
     with open('../log.txt', 'a', encoding='utf-8') as file:
         file.write("INFO - Start parsing module\n")
-    pe = pefile.PE(file_path)
+    # pe = pefile.PE(file_path)
+    # module_name = Path(file_path).name
+    # module_version = pe.FILE_HEADER.Machine#pe.OPTIONAL_HEADER.MajorImageVersion
+    # module_size = pe.OPTIONAL_HEADER.SizeOfImage 
+    # module_type = file_path[-3:]
+    # module_description = None 
+    # module_hash_md5 = hashlib.md5(open(file_path, 'rb').read()).hexdigest()
+    # module_hash_sha256 = hashlib.sha256(open(file_path, 'rb').read()).hexdigest()
+    # module_hash_imphash = pe.get_imphash()
+    # module_hash_ssdeep = ppdeep.hash(open(file_path, 'rb').read())
+    # module_hash_tlsh = tlsh.hash(open(file_path, 'rb').read())
+    # has_symbols = True if hasattr(pe, 'DIRECTORY_ENTRY_IMPORT') else False
+    # try:
+    #     export_funcs_count = len([e.name for e in pe.DIRECTORY_ENTRY_EXPORT.symbols])
+    # except:
+    #     export_funcs_count = 0
+    # try:
+    #     import_funcs_count = sum(len(d.imports) for d in pe.DIRECTORY_ENTRY_IMPORT)
+    # except:
+    #     import_funcs_count = 0
     module_name = Path(file_path).name
-    module_version = pe.FILE_HEADER.Machine#pe.OPTIONAL_HEADER.MajorImageVersion
-    module_size = pe.OPTIONAL_HEADER.SizeOfImage 
-    module_type = file_path[-3:]
+    binary = lief.parse(module_name).abstract
+    module_version = 64 if (binary.header.is_64) else 32
+    module_size = os.path.getsize(file_path)
+    module_type = module_name.split('.')[-1].lower()
     module_description = None 
-    module_hash_md5 = hashlib.md5(open(file_path, 'rb').read()).hexdigest()
-    module_hash_sha256 = hashlib.sha256(open(file_path, 'rb').read()).hexdigest()
-    module_hash_imphash = pe.get_imphash()
-    module_hash_ssdeep = ppdeep.hash(open(file_path, 'rb').read())
-    module_hash_tlsh = tlsh.hash(open(file_path, 'rb').read())
-    has_symbols = True if hasattr(pe, 'DIRECTORY_ENTRY_IMPORT') else False
-    try:
-        export_funcs_count = len([e.name for e in pe.DIRECTORY_ENTRY_EXPORT.symbols])
-    except:
-        export_funcs_count = 0
-    try:
-        import_funcs_count = sum(len(d.imports) for d in pe.DIRECTORY_ENTRY_IMPORT)
-    except:
-        import_funcs_count = 0
+    file_data = open(file_path, 'rb').read()
+    module_hash_md5 = hashlib.md5(file_data).hexdigest()
+    module_hash_sha256 = hashlib.sha256(file_data).hexdigest()
+    module_hash_imphash = 0
+    module_hash_ssdeep = ppdeep.hash(file_data)
+    module_hash_tlsh = tlsh.hash(file_data)
+    export_funcs_count = len(binary.exported_functions)
+    import_funcs_count = len(binary.imported_functions)
+    has_symbols = True if (export_funcs_count != 0 or import_funcs_count != 0) else False
     strings_count = len(list(idautils.Strings(default_setup=False)))
+    print(module_name, module_version, module_size, module_type, module_description, 
+          module_hash_md5, module_hash_sha256, module_hash_imphash, module_hash_ssdeep, module_hash_tlsh, 
+          export_funcs_count, import_funcs_count, has_symbols, strings_count)
     db.execute_postgres_command("INSERT INTO Modules(ModuleName,\
                                 ModuleVersion, \
                                 ModuleSize, \
